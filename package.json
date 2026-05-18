@@ -1,7 +1,7 @@
 {
   "name": "goon-bot-for-admin",
   "version": "1.0.0",
-  "description": "Discord bot with admin backend API",
+  "description": "Admin bot + backend API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
