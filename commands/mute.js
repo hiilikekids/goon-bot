@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -20,19 +20,20 @@ module.exports = {
             option
                 .setName('reason')
                 .setDescription('Reason for the mute')
-                .setRequired(false)
-        )
-        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+        ),
 
-    async execute(interaction) {
-        const requiredRoleId = '1474765692267008114'; // Head administrator
+    async execute(interaction, OWNER_WHITELIST, ADMIN_WHITELIST) {
 
-        if (!interaction.member.roles.cache.has(requiredRoleId)) {
-            return interaction.reply({
-                content: `❌ You must have the **Head administrator** role to use this command.`,
-                ephemeral: true
-            });
-        }
+if (
+    !OWNER_WHITELIST.includes(interaction.user.id) &&
+    !ADMIN_WHITELIST.includes(interaction.user.id)
+) {
+    return interaction.reply({
+        content: "❌ You are not allowed to use this command.",
+        ephemeral: true
+    });
+}
+
 
         const target = interaction.options.getMember('target');
         const minutes = interaction.options.getInteger('minutes');
@@ -44,9 +45,10 @@ module.exports = {
             await target.timeout(duration, reason);
 
             await interaction.reply({
-                content: `🔇 **${target.user.tag}** has been muted for **${minutes} minutes**.\nReason: ${reason}`,
+                content: `🔇 yes master, I have muted **${target.user.tag}** for **${minutes} minutes**.\nReason: ${reason}`,
                 ephemeral: false
             });
+
         } catch (error) {
             console.error(error);
 

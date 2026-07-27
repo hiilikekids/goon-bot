@@ -17,5 +17,10 @@ module.exports = {
     draga: [
         "King Draga banned the royal baker… he kept making crumby excuses.",
         "A knight asked Draga for a raise. Draga said: 'You need to level up first.'"
+    ],
+
+    chaotic: [
+        "I tried to be normal once… worst five minutes of my life.",
+        "My last brain cell just clocked out early."
     ]
 };

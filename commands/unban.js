@@ -1,34 +1,42 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require("discord.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('unban')
-        .setDescription('Unban a user by their ID.')
+        .setName("unban")
+        .setDescription("Unban a user (Owner/Admin Only)")
         .addStringOption(option =>
-            option.setName('userid')
-                .setDescription('The ID of the user to unban')
+            option.setName("userid")
+                .setDescription("ID of the user to unban")
                 .setRequired(true)
-        )
-        .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+        ),
 
-    async execute(interaction) {
-        const requiredRoleId = '1474765692267008114';
+    async execute(interaction, OWNER_WHITELIST, ADMIN_WHITELIST) {
 
-        if (!interaction.member.roles.cache.has(requiredRoleId)) {
+        const userId = interaction.options.getString("userid");
+
+        // OWNER or ADMIN only
+        if (
+            !OWNER_WHITELIST.includes(interaction.user.id) &&
+            !ADMIN_WHITELIST.includes(interaction.user.id)
+        ) {
             return interaction.reply({
-                content: `❌ You must have the **Head administrator** role to use this command.`,
+                content: "❌ You are not allowed to use /unban.",
                 ephemeral: true
             });
         }
 
-        const userId = interaction.options.getString('userid');
-
         try {
             await interaction.guild.members.unban(userId);
-            await interaction.reply(`✅ Unbanned user with ID **${userId}**.`);
-        } catch (error) {
-            console.error(error);
-            await interaction.reply(`❌ That user is not banned.`);
+        } catch (err) {
+            return interaction.reply({
+                content: "❌ That user is not banned or the ID is invalid.",
+                ephemeral: true
+            });
         }
+
+        return interaction.reply({
+            content: `♻️ User with ID **${userId}** has been unbanned.`,
+            ephemeral: false
+        });
     }
 };

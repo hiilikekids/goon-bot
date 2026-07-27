@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -17,17 +17,17 @@ module.exports = {
         .addStringOption(option =>
             option.setName('reason')
                 .setDescription('Reason for the temporary ban')
-                .setRequired(false)
-        )
-        .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+        ),
 
-    async execute(interaction) {
-        const requiredRoleId = '1474765692267008114';
+    async execute(interaction, OWNER_WHITELIST, ADMIN_WHITELIST) {
 
-        // Role check
-        if (!interaction.member.roles.cache.has(requiredRoleId)) {
+        // ⭐ OWNER or ADMIN only
+        if (
+            !OWNER_WHITELIST.includes(interaction.user.id) &&
+            !ADMIN_WHITELIST.includes(interaction.user.id)
+        ) {
             return interaction.reply({
-                content: `❌ You must have the **Head administrator** role to use this command.`,
+                content: "❌ You are not allowed to use this command.",
                 ephemeral: true
             });
         }
@@ -55,9 +55,9 @@ module.exports = {
             // ⭐ THEN ban
             await guild.members.ban(target.id, { reason });
 
-            // Confirm to admin
+            // Confirm to moderator/admin who issued the command
             await interaction.reply(
-                `⛔ Temporarily banned **${target.tag}** for **${duration} minutes**.\nReason: ${reason}`
+                `⛔ I have temporarily banned **${target.tag}** for **${duration} minutes**.\nReason: ${reason}`
             );
 
             // ⭐ Auto-unban after duration

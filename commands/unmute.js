@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -9,15 +9,17 @@ module.exports = {
                 .setName('target')
                 .setDescription('The user to unmute')
                 .setRequired(true)
-        )
-        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+        ),
 
-    async execute(interaction) {
-        const requiredRoleId = '1474765692267008114'; // Head administrator
+    async execute(interaction, OWNER_WHITELIST, ADMIN_WHITELIST) {
 
-        if (!interaction.member.roles.cache.has(requiredRoleId)) {
+        // ⭐ OWNER or ADMIN only
+        if (
+            !OWNER_WHITELIST.includes(interaction.user.id) &&
+            !ADMIN_WHITELIST.includes(interaction.user.id)
+        ) {
             return interaction.reply({
-                content: `❌ You must have the **Head administrator** role to use this command.`,
+                content: "❌ You are not allowed to use this command.",
                 ephemeral: true
             });
         }
@@ -25,17 +27,18 @@ module.exports = {
         const target = interaction.options.getMember('target');
 
         try {
-            await target.timeout(null);
+            await target.timeout(null); // removes timeout instantly
 
-            await interaction.reply({
+            return interaction.reply({
                 content: `🔊 **${target.user.tag}** has been unmuted.`,
                 ephemeral: false
             });
+
         } catch (error) {
             console.error(error);
 
-            await interaction.reply({
-                content: `❌ I couldn't unmute that user. My role might be below theirs.`,
+            return interaction.reply({
+                content: `❌ I couldn't unmute that user.`,
                 ephemeral: true
             });
         }

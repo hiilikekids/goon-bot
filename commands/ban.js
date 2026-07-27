@@ -1,59 +1,50 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { DM_MESSAGES } = require('../config/messages');
+const { SlashCommandBuilder, PermissionsBitField } = require("discord.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('ban')
-        .setDescription('Ban a user from the server.')
+        .setName("ban")
+        .setDescription("Ban a user (Owner/Admin Only)")
         .addUserOption(option =>
-            option.setName('target')
-                .setDescription('The user to ban')
+            option.setName("user")
+                .setDescription("User to ban")
                 .setRequired(true)
         )
         .addStringOption(option =>
-            option.setName('reason')
-                .setDescription('Reason for the ban')
+            option.setName("reason")
+                .setDescription("Reason for ban")
                 .setRequired(false)
-        )
-        .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+        ),
 
-    async execute(interaction) {
-        const requiredRoleId = '1474765692267008114';
+    async execute(interaction, OWNER_WHITELIST, ADMIN_WHITELIST) {
 
-        if (!interaction.member.roles.cache.has(requiredRoleId)) {
+        const user = interaction.options.getUser("user");
+        const reason = interaction.options.getString("reason") || "No reason provided";
+
+        // OWNER or ADMIN only
+        if (
+            !OWNER_WHITELIST.includes(interaction.user.id) &&
+            !ADMIN_WHITELIST.includes(interaction.user.id)
+        ) {
             return interaction.reply({
-                content: `❌ You must have the **Head administrator** role to use this command.`,
+                content: "❌ You are not allowed to use /ban.",
                 ephemeral: true
             });
         }
 
-        const target = interaction.options.getUser('target');
-        const reason = interaction.options.getString('reason');
+        const member = await interaction.guild.members.fetch(user.id).catch(() => null);
 
-        // ⭐ If no reason → use your custom permban message
-        const dmMessage = reason
-            ? `You have been banned from **${interaction.guild.name}**.\nReason: ${reason}`
-            : DM_MESSAGES.permban;
-
-        try {
-            // ⭐ DM FIRST
-            try {
-                await target.send(dmMessage);
-            } catch {
-                console.log("DM failed — user has DMs disabled.");
-            }
-
-            // ⭐ THEN ban
-            await interaction.guild.members.ban(target.id, { reason: reason || "No reason provided" });
-
-            // Reply to admin
-            await interaction.reply(
-                `🔨 Banned **${target.tag}**.${reason ? ` Reason: ${reason}` : ""}`
-            );
-
-        } catch (error) {
-            console.error(error);
-            await interaction.reply(`❌ I couldn't ban that user.`);
+        if (!member) {
+            return interaction.reply({
+                content: "❌ That user is not in the server.",
+                ephemeral: true
+            });
         }
+
+        await member.ban({ reason });
+
+        return interaction.reply({
+            content: `🔨 **${user.tag}** has been banned.\nReason: ${reason}`,
+            ephemeral: false
+        });
     }
 };

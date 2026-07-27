@@ -1,45 +1,51 @@
 const { SlashCommandBuilder } = require('discord.js');
-const checkRole = require('../utils/checkRole');
-const { DM_MESSAGES } = require('../config/messages');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('warn')
-        .setDescription('Record a warning for a user.')
+        .setDescription('Warn a user.')
         .addUserOption(option =>
-            option.setName('user')
+            option
+                .setName('target')
                 .setDescription('The user to warn')
                 .setRequired(true)
         )
         .addStringOption(option =>
-            option.setName('reason')
+            option
+                .setName('reason')
                 .setDescription('Reason for the warning')
                 .setRequired(false)
         ),
 
-    async execute(interaction) {
-        const HEAD_ADMIN_ROLE = "1474765692267008114";
+    async execute(interaction, OWNER_WHITELIST, ADMIN_WHITELIST) {
 
-        if (!checkRole(interaction.member, HEAD_ADMIN_ROLE)) {
+        // ⭐ OWNER or ADMIN only
+        if (
+            !OWNER_WHITELIST.includes(interaction.user.id) &&
+            !ADMIN_WHITELIST.includes(interaction.user.id)
+        ) {
             return interaction.reply({
-                content: "You must be a **Head administrator** to use this command.",
+                content: "❌ You are not allowed to use this command.",
                 ephemeral: true
             });
         }
 
-        const user = interaction.options.getUser('user');
-        const reason = interaction.options.getString('reason') || 'No reason provided.';
+        const target = interaction.options.getUser('target');
+        const reason = interaction.options.getString('reason') || "No reason provided";
 
-        // DM using messages.js
+        // DM the user
         try {
-            await user.send(`${DM_MESSAGES.warn}\nReason: ${reason}`);
-        } catch (err) {
-            console.log("DM failed — user has DMs closed.");
+            await target.send(
+                `⚠️ You have been warned in **${interaction.guild.name}**.\nReason: ${reason}`
+            );
+        } catch {
+            console.log("DM failed — user has DMs off.");
         }
 
-        await interaction.reply({
-            content: `Warning recorded for **${user.tag}**.\nReason: ${reason}`,
-            ephemeral: true
+        // Reply to whoever used the command (owner or admin)
+        return interaction.reply({
+            content: `⚠️ **${target.tag}** has been warned.\nReason: ${reason}`,
+            ephemeral: false
         });
     }
 };
